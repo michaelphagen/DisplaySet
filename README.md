@@ -17,5 +17,8 @@ These values can be obtained using [displayplacer](https://github.com/jakehilbor
 3. Run the build script
 4. The application bundles will be created in the root of the repo
 
+## Setting Icons
+The icons for the applications can be set by clicking on the application bundle and selecting "Get Info" from the context menu. Then drag the desired icon onto the icon in the top left of the info window.
+
 ## Thanks
 Thanks to [Jake Hilborn](https://github.com/jakehilborn) for creating [displayplacer](https://github.com/jakehilborn/displayplacer) and [Dean Scarff](https://github.com/p00ya) for creating [displaymode](https://github.com/p00ya/displaymode)
