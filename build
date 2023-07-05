@@ -6,6 +6,16 @@
 # Example: 0;1920x1080@60;0,0
 # Example: 1;1920x1080@60;1920,0
 
+makeApp(){
+    script_name=$1
+    # create .app folder and copy script inside
+    app_name="${script_name%.*}.app"
+    mkdir -p "$app_name"
+    # copy to .app folder and rename with no extension
+    cp "$script_name" "$app_name/${script_name%.*}"
+    cp -r resources "$app_name/resources"
+}
+
 getDisplayValue(){
     # First parameter is display number (line number)
     # Second parameter is the value to get (id, resolution, refresh rate, position)
@@ -36,9 +46,9 @@ makeMirroredApp(){
     numberOfDisplays=$(wc -l < Displays.csv)
     numberOfDisplays=$((numberOfDisplays+1))
     # create the .bash script
-    echo "#!/bin/bash" > MirroredDisplays.sh
+    echo "#!/bin/bash" > "Set to Mirrored Displays.sh"
     #cd to the directory of the .script
-    echo "cd \"\$(dirname \"\$0\")\"" >> MirroredDisplays.sh
+    echo "cd \"\$(dirname \"\$0\")\"" >> "Set to Mirrored Displays.sh"
     # ids are the id of each display concatenated with +
     ids=""
     for (( i=1; i<=$numberOfDisplays; i++ ))
@@ -79,18 +89,17 @@ makeMirroredApp(){
         ids="$ids$(getDisplayValue $i id)"
     done
     # echo the resounces/displayplacer command to the .bash script 
-    echo resources/displayplacer \""id:$ids res:$lowestResolution hz:$lowestRefreshRate color_depth:8 scaling:off origin:(0,0) degree:0\"" >> MirroredDisplays.sh
+    echo resources/displayplacer \""id:$ids res:$lowestResolution hz:$lowestRefreshRate color_depth:8 scaling:off origin:(0,0) degree:0\"" >> "Set to Mirrored Displays.sh"
     # echo the exit command to the .bash script
-    echo "exit" >> MirroredDisplays.sh
+    echo "exit" >> "Set to Mirrored Displays.sh"
     # make the .bash script executable
-    chmod +x MirroredDisplays.sh
+    chmod +x "Set to Mirrored Displays.sh"
 
     # create the .app bundle
-    ../scriptapp/build MirroredDisplays.sh Mirrored.png
-    cp -r resources MirroredDisplays.app/resources
+    makeApp "Set to Mirrored Displays.sh"
 
     # remove the .bash script
-    rm MirroredDisplays.sh
+    rm "Set to Mirrored Displays.sh"
 }
 
 makeSeparateApp(){
@@ -98,14 +107,14 @@ makeSeparateApp(){
     numberOfDisplays=$(wc -l < Displays.csv)
     numberOfDisplays=$((numberOfDisplays+1))
     # create the .bash script
-    echo "#!/bin/bash" > SeparateDisplays.sh
+    echo "#!/bin/bash" > "Set to Separate Displays.sh"
     #cd to the directory of the .script
-    echo "cd \"\$(dirname \"\$0\")\"" >> SeparateDisplays.sh
+    echo "cd \"\$(dirname \"\$0\")\"" >> "Set to Separate Displays.sh"
     for (( i=1; i<=$numberOfDisplays; i++))
     do
         command="$command \"id:$(getDisplayValue $i id) res:$(getDisplayValue $i resolution) hz:$(getDisplayValue $i refreshrate) color_depth:8 scaling:off origin:($(getDisplayValue $i position)) degree:0\""
     done
-    echo resources/displayplacer"$command" >> SeparateDisplays.sh
+    echo resources/displayplacer"$command" >> "Set to Separate Displays.sh"
     # echo the exit command to the .bash script
     for (( i=1; i<=$numberOfDisplays; i++))
     do
@@ -115,21 +124,20 @@ makeSeparateApp(){
         #if i is not 0, append it to the command
         if [ $i -ne 1 ]
         then
-            echo resources/displaymode t "$resolutionx" "$resolutiony" @"$(getDisplayValue $i refreshrate)" "$(($i-1))" >> SeparateDisplays.sh    
+            echo resources/displaymode t "$resolutionx" "$resolutiony" @"$(getDisplayValue $i refreshrate)" "$(($i-1))" >> "Set to Separate Displays.sh"    
         else
-            echo resources/displaymode t "$resolutionx" "$resolutiony" @"$(getDisplayValue $i refreshrate)" >> SeparateDisplays.sh
+            echo resources/displaymode t "$resolutionx" "$resolutiony" @"$(getDisplayValue $i refreshrate)" >> "Set to Separate Displays.sh"
         fi
     done
-    echo "exit" >> SeparateDisplays.sh
+    echo "exit" >> "Set to Separate Displays.sh"
     # make the .bash script executable
-    chmod +x SeparateDisplays.sh
+    chmod +x "Set to Separate Displays.sh"
 
     # create the .app bundle
-    ../scriptapp/build SeparateDisplays.sh Separate.png
-    cp -r resources SeparateDisplays.app/resources
+    makeApp "Set to Separate Displays.sh"
 
     # remove the .bash script
-    rm SeparateDisplays.sh
+    rm "Set to Separate Displays.sh"
 }
 
 makeMirroredApp
