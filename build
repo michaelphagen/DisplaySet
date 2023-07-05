@@ -1,0 +1,136 @@
+#!/bin/bash
+# This script reads the Displays.csv file and creates 2 app bundles for Mirrored Displays and Separate Displays
+
+# Read the Displays.csv file and get the values for the following variables
+# Format is id;resolution@refreshrate;position
+# Example: 0;1920x1080@60;0,0
+# Example: 1;1920x1080@60;1920,0
+
+getDisplayValue(){
+    # First parameter is display number (line number)
+    # Second parameter is the value to get (id, resolution, refresh rate, position)
+    # Get the line number
+    lineNumber=$1
+    # Read the line
+    line=$(sed "${lineNumber}q;d" Displays.csv)
+    # Split the line by ;
+    IFS=';' read -ra values <<< "$line"
+    # If the second parameter is id, return the first value
+    case "$2" in
+        id)
+            echo "${values[0]}"
+            ;;
+        resolution)
+            echo "${values[1]%%@*}"
+            ;;
+        refreshrate)
+            echo "${values[1]##*@}"
+            ;;
+        position)
+            echo "${values[2]}"
+            ;;
+    esac
+}
+
+makeMirroredApp(){
+    numberOfDisplays=$(wc -l < Displays.csv)
+    numberOfDisplays=$((numberOfDisplays+1))
+    # create the .bash script
+    echo "#!/bin/bash" > MirroredDisplays.sh
+    #cd to the directory of the .script
+    echo "cd \"\$(dirname \"\$0\")\"" >> MirroredDisplays.sh
+    # ids are the id of each display concatenated with +
+    ids=""
+    for (( i=1; i<=$numberOfDisplays; i++ ))
+    do
+        #for the first display, set the resolution and refresh rate to the lowest
+        if [ $i -eq 1 ]
+        then
+            lowestResolution=$(getDisplayValue $i resolution)
+            #convert resolution to x and y
+            lowestResolutionx=${lowestResolution%%x*}
+            lowestResolutiony=${lowestResolution##*x}
+            lowestResolutionPixel=$((lowestResolutionx*lowestResolutiony))
+            lowestRefreshRate=$(getDisplayValue $i refreshrate)
+        fi
+        if [ $i -ne 1 ]
+        then
+            ids="$ids+"
+            resolution=$(getDisplayValue $i resolution)
+            #convert resolution to x and y
+            resolutionx=${resolution%%x*}
+            resolutiony=${resolution##*x}
+            resolutionPixel=$((resolutionx*resolutiony))
+            refreshRate=$(getDisplayValue $i refreshrate)
+            #if the resolution is lower than the lowest resolution, set the lowest resolution to the current resolution
+            if [ $resolutionPixel -lt $lowestResolutionPixel ]
+            then
+                lowestResolution=$resolution
+                lowestResolutionx=$resolutionx
+                lowestResolutiony=$resolutiony
+                lowestResolutionPixel=$resolutionPixel
+            fi
+            #if the refresh rate is lower than the lowest refresh rate, set the lowest refresh rate to the current refresh rate
+            if [ $refreshRate -lt $lowestRefreshRate ]
+            then
+                lowestRefreshRate=$refreshRate
+            fi
+        fi
+        ids="$ids$(getDisplayValue $i id)"
+    done
+    # echo the resounces/displayplacer command to the .bash script 
+    echo resources/displayplacer \""id:$ids res:$lowestResolution hz:$lowestRefreshRate color_depth:8 scaling:off origin:(0,0) degree:0\"" >> MirroredDisplays.sh
+    # echo the exit command to the .bash script
+    echo "exit" >> MirroredDisplays.sh
+    # make the .bash script executable
+    chmod +x MirroredDisplays.sh
+
+    # create the .app bundle
+    ../scriptapp/build MirroredDisplays.sh Mirrored.png
+    cp -r resources MirroredDisplays.app/resources
+
+    # remove the .bash script
+    rm MirroredDisplays.sh
+}
+
+makeSeparateApp(){
+    #number of lines in the Displays.csv file + 1
+    numberOfDisplays=$(wc -l < Displays.csv)
+    numberOfDisplays=$((numberOfDisplays+1))
+    # create the .bash script
+    echo "#!/bin/bash" > SeparateDisplays.sh
+    #cd to the directory of the .script
+    echo "cd \"\$(dirname \"\$0\")\"" >> SeparateDisplays.sh
+    for (( i=1; i<=$numberOfDisplays; i++))
+    do
+        command="$command \"id:$(getDisplayValue $i id) res:$(getDisplayValue $i resolution) hz:$(getDisplayValue $i refreshrate) color_depth:8 scaling:off origin:($(getDisplayValue $i position)) degree:0\""
+    done
+    echo resources/displayplacer"$command" >> SeparateDisplays.sh
+    # echo the exit command to the .bash script
+    for (( i=1; i<=$numberOfDisplays; i++))
+    do
+        resolution=$(getDisplayValue $i resolution)
+        resolutionx=${resolution%%x*}
+        resolutiony=${resolution##*x}
+        #if i is not 0, append it to the command
+        if [ $i -ne 1 ]
+        then
+            echo resources/displaymode t "$resolutionx" "$resolutiony" @"$(getDisplayValue $i refreshrate)" "$(($i-1))" >> SeparateDisplays.sh    
+        else
+            echo resources/displaymode t "$resolutionx" "$resolutiony" @"$(getDisplayValue $i refreshrate)" >> SeparateDisplays.sh
+        fi
+    done
+    echo "exit" >> SeparateDisplays.sh
+    # make the .bash script executable
+    chmod +x SeparateDisplays.sh
+
+    # create the .app bundle
+    ../scriptapp/build SeparateDisplays.sh Separate.png
+    cp -r resources SeparateDisplays.app/resources
+
+    # remove the .bash script
+    rm SeparateDisplays.sh
+}
+
+makeMirroredApp
+makeSeparateApp
