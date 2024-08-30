@@ -1,7 +1,9 @@
 # DisplaySet
 App Builder for "Set Separate Displays" and "Set Mirrored Displays" apps
 
-This script creates 2 application bundles that will set a the computer's display to pre-determined settings for mirrored and separate displays. This is useful if the native resolution of one of your displays is unusable for some reason (using an active HDMI extender, etc.)
+This script creates 2 application bundles that will set a the computer's display to pre-determined settings for mirrored and separate displays. This is useful if the native resolution of one of your displays is unusable for some reason (using an active HDMI extender, etc.). 
+
+## NOTE: BECAUSE THIS REPO IS DESIGNED FOR ARM BASED MACS, TO USE WITH INTEL MACS YOU NEED TO DOWNLOAD THE INTEL VERSION OF DISPLAYPLACER.
 
 ## Configuration
 These pre-determined settings are specified in the Displays.csv file as semicolon separated values:
